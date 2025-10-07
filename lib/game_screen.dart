@@ -10,7 +10,7 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateMixin {
+class _GameScreenState extends State<GameScreen> {
   final AudioPlayer _bgPlayer = AudioPlayer();
   final AudioPlayer _effectPlayer = AudioPlayer();
   bool _hasWon = false;
@@ -33,10 +33,21 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   void _generateItems() {
     final rand = Random();
-    _items = List.generate(8, (index) {
-      final isWinner = index == rand.nextInt(8);
+
+    // You can adjust this number to make the game easier or harder
+    const int totalItems = 200; // increase from 8 - 20 or more
+
+    final int winningIndex = rand.nextInt(totalItems);
+
+    _items = List.generate(totalItems, (index) {
+      final isWinner = index == winningIndex;
+
       return _ItemData(
-        imagePath: isWinner ? 'assets/images/treasure.png' : _imagePaths[rand.nextInt(3)],
+        imagePath: isWinner
+            ? 'assets/images/treasure.png'
+            : _imagePaths[rand.nextInt(
+                _imagePaths.length - 1,
+              )], // random spooky image
         isWinningItem: isWinner,
       );
     });
@@ -67,35 +78,45 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Background
-        Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/bg.jpg'),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        // Spooky items
-        ..._items.map((item) => SpookyItem(
-              imagePath: item.imagePath,
-              onTap: () => _onItemTap(item.isWinningItem),
-            )),
-        // Win Message
-        if (_hasWon)
-          Center(
-            child: Container(
-              color: Colors.black.withOpacity(0.7),
-              padding: const EdgeInsets.all(20),
-              child: const Text(
-                '🎉 You Found It! 🎃',
-                style: TextStyle(fontSize: 32, color: Colors.orange),
+    final screenSize = MediaQuery.of(context).size;
+
+    return SizedBox.expand(
+      // Full screen area
+      child: Stack(
+        children: [
+          // Background image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/bg.jpg'),
+                fit: BoxFit.cover,
               ),
             ),
-          )
-      ],
+          ),
+
+          // Animated spooky items
+          ..._items.map(
+            (item) => SpookyItem(
+              imagePath: item.imagePath,
+              onTap: () => _onItemTap(item.isWinningItem),
+              screenSize: screenSize,
+            ),
+          ),
+
+          // Win message overlay
+          if (_hasWon)
+            Center(
+              child: Container(
+                color: Colors.black.withOpacity(0.7),
+                padding: const EdgeInsets.all(20),
+                child: const Text(
+                  '🎉 You Found It! 🎃',
+                  style: TextStyle(fontSize: 32, color: Colors.orange),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -103,5 +124,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 class _ItemData {
   final String imagePath;
   final bool isWinningItem;
+
   _ItemData({required this.imagePath, required this.isWinningItem});
 }
